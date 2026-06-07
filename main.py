@@ -1,30 +1,40 @@
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
+import json
+import numpy as np
+
+app = FastAPI()
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+# Load index
+with open("video_index.json", "r", encoding="utf-8") as f:
+    VIDEO_INDEX = json.load(f)
+
+
 @app.get("/search")
 def search(q: str):
 
-    # simple query embedding (fallback logic)
-    query_vec = [0.1] * 1536  # temporary placeholder
+    query_lower = q.lower()
 
-    best_video = None
-    best_score = -1
+    results = []
 
     for item in VIDEO_INDEX:
-        if "embedding" not in item:
-            continue
+        text = item.get("text", "").lower()
 
-        # cosine similarity
-        a = np.array(query_vec)
-        b = np.array(item["embedding"])
+        if query_lower in text:
+            results.append({
+                "video_url": item["url"],
+                "score": 1.0
+            })
 
-        score = np.dot(a, b) / (np.linalg.norm(a) * np.linalg.norm(b))
-
-        if score > best_score:
-            best_score = score
-            best_video = item["url"]
-
-    if not best_video:
+    if not results:
         return {"query": q, "result": None}
 
-    return {
-        "video_url": best_video,
-        "score": float(best_score)
-    }
+    return results[0]
