@@ -1,0 +1,12 @@
+<<<<<<< HEAD
+fastapi
+uvicorn
+numpy
+google-cloud-speech
+=======
+fastapi
+uvicorn
+numpy
+google-cloud-speech
+>>>>>>> bff0b6b823218033bf548148af9b1f23f420508f
+google-cloud-aiplatform
