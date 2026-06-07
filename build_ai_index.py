@@ -1,10 +1,8 @@
 import json
 from google.cloud import storage
-from google.cloud import speech
 from vertexai.language_models import TextEmbeddingModel
 import vertexai
 
-# ====== INIT (FIXED - NO AUTO DETECTION HANG) ======
 PROJECT_ID = "project-6ddfbc9f-8e2e-42c9-973"
 LOCATION = "us-central1"
 
@@ -13,16 +11,14 @@ vertexai.init(
     location=LOCATION
 )
 
-# ====== LOAD MODEL ======
 model = TextEmbeddingModel.from_pretrained("text-embedding-004")
 
-# ====== GCS CLIENT ======
 storage_client = storage.Client()
 
 BUCKET_NAME = "ralph-tiktok-videos"
 PREFIX = "tiktok-videos/"
 
-# ====== FUNCTIONS ======
+
 def generate_metadata(transcript, video_url):
     print("Processing:", video_url)
 
@@ -33,6 +29,7 @@ def generate_metadata(transcript, video_url):
         "url": video_url,
         "embedding": embedding
     }
+
 
 def list_videos():
     bucket = storage_client.bucket(BUCKET_NAME)
@@ -47,7 +44,7 @@ def list_videos():
             })
     return videos
 
-# ====== MAIN ======
+
 def main():
     print("Starting index build...")
 
@@ -58,7 +55,6 @@ def main():
     for v in videos:
         print("Video found:", v["name"])
 
-        # TEMP transcript (replace later with Speech-to-Text)
         transcript = "sample transcript here"
 
         enriched.append(generate_metadata(transcript, v["url"]))
@@ -68,6 +64,6 @@ def main():
 
     print("DONE. video_index.json created")
 
-# ====== RUN ======
+
 if __name__ == "__main__":
     main()
