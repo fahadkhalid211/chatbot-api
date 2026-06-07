@@ -60,7 +60,7 @@ def main():
     for v in videos:
         print("Video found:", v["name"])
 
-        transcript = "sample transcript here"
+        transcript = blob.name
 
         enriched.append(generate_metadata(transcript, v["url"]))
 
