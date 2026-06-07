@@ -1,6 +1,8 @@
 import json
 from google.cloud import storage
+import vertexai
 from vertexai.language_models import TextEmbeddingModel
+from google.auth import default
 import vertexai
 
 PROJECT_ID = "project-6ddfbc9f-8e2e-42c9-973"
