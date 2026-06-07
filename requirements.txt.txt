@@ -1,0 +1,5 @@
+fastapi
+uvicorn
+numpy
+google-cloud-speech
+google-cloud-aiplatform
