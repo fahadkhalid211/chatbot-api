@@ -8,9 +8,12 @@ import vertexai
 PROJECT_ID = "project-6ddfbc9f-8e2e-42c9-973"
 LOCATION = "us-central1"
 
+credentials, _ = default()
+
 vertexai.init(
     project=PROJECT_ID,
-    location=LOCATION
+    location=LOCATION,
+    credentials=credentials
 )
 
 model = TextEmbeddingModel.from_pretrained("text-embedding-004")
