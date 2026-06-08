@@ -3,66 +3,195 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ralph TikTok Semantic Search</title>
+    <title>Ralph AI Video Search</title>
     <style>
-        body { font-family: Arial, sans-serif; margin: 20px; text-align: center; background: #f4f4f4; }
-        h1 { color: #333; }
-        input { width: 60%; padding: 15px; font-size: 18px; border: 2px solid #ddd; border-radius: 8px; }
-        button { padding: 15px 30px; font-size: 18px; background: #ff0050; color: white; border: none; border-radius: 8px; cursor: pointer; }
-        button:hover { background: #e00045; }
-        #result { margin-top: 30px; max-width: 1000px; margin-left: auto; margin-right: auto; }
-        .video-card { margin: 20px auto; padding: 15px; background: white; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); max-width: 800px; }
-        video { width: 100%; max-width: 800px; border-radius: 10px; }
-        .score { color: #ff0050; font-weight: bold; }
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap');
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, #0f0f0f, #1a1a2e);
+            color: #ffffff;
+            margin: 0;
+            padding: 0;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+        .header {
+            text-align: center;
+            padding: 20px;
+            background: rgba(0,0,0,0.4);
+            border-bottom: 1px solid #333;
+        }
+        .header h1 {
+            margin: 0;
+            font-size: 28px;
+            color: #ff0050;
+        }
+        .chat-container {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+        .message {
+            max-width: 85%;
+            padding: 14px 18px;
+            border-radius: 18px;
+            line-height: 1.5;
+        }
+        .user-message {
+            align-self: flex-end;
+            background: #ff0050;
+            color: white;
+            border-bottom-right-radius: 4px;
+        }
+        .bot-message {
+            align-self: flex-start;
+            background: #252538;
+            border-bottom-left-radius: 4px;
+        }
+        .video-card {
+            background: #1e1e2e;
+            border-radius: 16px;
+            overflow: hidden;
+            margin: 12px 0;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+        }
+        video {
+            width: 100%;
+            display: block;
+        }
+        .score {
+            padding: 8px 16px;
+            background: rgba(255,0,80,0.2);
+            color: #ff0050;
+            font-size: 14px;
+            font-weight: 600;
+        }
+        .input-area {
+            padding: 20px;
+            background: rgba(0,0,0,0.6);
+            border-top: 1px solid #333;
+        }
+        .input-wrapper {
+            display: flex;
+            gap: 10px;
+            max-width: 900px;
+            margin: 0 auto;
+        }
+        input {
+            flex: 1;
+            padding: 16px 20px;
+            font-size: 17px;
+            border: none;
+            border-radius: 30px;
+            background: #2a2a3a;
+            color: white;
+        }
+        button {
+            padding: 0 28px;
+            background: #ff0050;
+            color: white;
+            border: none;
+            border-radius: 30px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+        button:hover {
+            background: #e00045;
+        }
+        .empty-state {
+            text-align: center;
+            color: #888;
+            margin-top: 100px;
+        }
     </style>
 </head>
 <body>
-    <h1>🔍 Ralph TikTok Semantic Search</h1>
-    <input type="text" id="query" placeholder="Ask for a topic... (e.g. money, motivation, entrepreneur)">
-    <button onclick="searchVideo()">Search Videos</button>
+    <div class="header">
+        <h1>🤖 Ralph AI Video Search</h1>
+        <p>Ask anything — Find the perfect motivational video</p>
+    </div>
 
-    <div id="result"></div>
+    <div class="chat-container" id="chat">
+        <div class="empty-state">
+            👋 Ask me anything about motivation, success, business, or mindset
+        </div>
+    </div>
+
+    <div class="input-area">
+        <div class="input-wrapper">
+            <input type="text" id="query" placeholder="Type your question here... (e.g. how to make money, success mindset)">
+            <button onclick="sendMessage()">Send</button>
+        </div>
+    </div>
 
     <script>
-        async function searchVideo() {
-            const query = document.getElementById("query").value.trim();
-            if (!query) return alert("Please enter a search query");
+        const chat = document.getElementById('chat');
+        const input = document.getElementById('query');
 
-            document.getElementById("result").innerHTML = "<p>🔎 Searching semantically...</p>";
+        async function sendMessage() {
+            const query = input.value.trim();
+            if (!query) return;
+
+            // Add user message
+            chat.innerHTML += `
+                <div class="message user-message">${query}</div>
+            `;
+            chat.scrollTop = chat.scrollHeight;
+
+            // Clear input
+            input.value = "";
+
+            // Show loading
+            const loadingId = 'loading-' + Date.now();
+            chat.innerHTML += `
+                <div class="message bot-message" id="${loadingId}">Thinking...</div>
+            `;
+            chat.scrollTop = chat.scrollHeight;
 
             try {
-                const res = await fetch(`http://127.0.0.1:8000/search?q=${encodeURIComponent(query)}`);
+                const res = await fetch(`/search?q=${encodeURIComponent(query)}`);
                 const data = await res.json();
 
+                // Remove loading
+                document.getElementById(loadingId).remove();
+
                 if (!data.results || data.results.length === 0) {
-                    document.getElementById("result").innerHTML = "<p>No good matches found.</p>";
-                    return;
+                    chat.innerHTML += `<div class="message bot-message">Sorry, I couldn't find any relevant videos.</div>`;
+                } else {
+                    let html = `<div class="message bot-message">Here are the best matching videos:</div>`;
+                    
+                    data.results.forEach(item => {
+                        html += `
+                            <div class="video-card">
+                                <div class="score">Match Score: ${item.score.toFixed(3)}</div>
+                                <video controls autoplay muted loop>
+                                    <source src="${item.video_url}" type="video/mp4">
+                                </video>
+                                <div style="padding:12px; font-size:14px; color:#ccc;">
+                                    ${item.transcript}
+                                </div>
+                            </div>
+                        `;
+                    });
+                    chat.innerHTML += html;
                 }
-
-                let html = `<h2>Top Matches (${data.results.length})</h2>`;
-                
-                data.results.forEach(item => {
-                    html += `
-                        <div class="video-card">
-                            <div class="score">Score: ${item.score.toFixed(3)}</div>
-                            <video controls autoplay muted loop>
-                                <source src="${item.video_url}" type="video/mp4">
-                            </video>
-                            <p><strong>Transcript:</strong> ${item.transcript}</p>
-                        </div>
-                    `;
-                });
-
-                document.getElementById("result").innerHTML = html;
             } catch (err) {
-                console.error(err);
-                document.getElementById("result").innerHTML = "<p style='color:red'>Error connecting to backend.<br>Make sure server is running on port 8000.</p>";
+                document.getElementById(loadingId).remove();
+                chat.innerHTML += `<div class="message bot-message" style="color:#ff6666;">Error connecting to AI. Please try again.</div>`;
             }
+
+            chat.scrollTop = chat.scrollHeight;
         }
 
-        // Press Enter to search
-        document.getElementById("query").addEventListener("keypress", function(e) {
-            if (e.key === "Enter") searchVideo();
+        // Allow pressing Enter
+        input.addEventListener("keypress", function(e) {
+            if (e.key === "Enter") sendMessage();
         });
     </script>
 </body>
