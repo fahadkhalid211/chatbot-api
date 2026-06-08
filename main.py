@@ -21,20 +21,42 @@ with open("video_index.json", "r", encoding="utf-8") as f:
 @app.get("/search")
 def search(q: str):
 
-    query_lower = q.lower()
+    q = q.lower()
 
-    results = []
+    best_video = None
+
+    # simple keyword fallback map
+    keywords = {
+        "motivation": ["motiv", "success", "life", "dream"],
+        "fitness": ["gym", "workout", "health"],
+        "money": ["money", "business", "rich", "earn"]
+    }
 
     for item in VIDEO_INDEX:
+
         text = item.get("text", "").lower()
 
-        if query_lower in text:
-            results.append({
-                "video_url": item["url"],
-                "score": 1.0
-            })
+        score = 0
 
-    if not results:
-        return {"query": q, "result": None}
+        # keyword scoring
+        for k, words in keywords.items():
+            if k in q:
+                for w in words:
+                    if w in text:
+                        score += 1
 
-    return results[0]
+        if score > 0:
+            best_video = item["url"]
+            break
+
+    if not best_video:
+        # fallback: return ANY video so it never shows null
+        return {
+            "video_url": VIDEO_INDEX[0]["url"],
+            "score": 0.1
+        }
+
+    return {
+        "video_url": best_video,
+        "score": 1.0
+    }
