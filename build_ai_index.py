@@ -1,19 +1,14 @@
 import json
 from google.cloud import storage
-import vertexai
 from vertexai.language_models import TextEmbeddingModel
-from google.auth import default
 import vertexai
 
 PROJECT_ID = "project-6ddfbc9f-8e2e-42c9-973"
 LOCATION = "us-central1"
 
-credentials, _ = default()
-
 vertexai.init(
     project=PROJECT_ID,
-    location=LOCATION,
-    credentials=credentials
+    location=LOCATION
 )
 
 model = TextEmbeddingModel.from_pretrained("text-embedding-004")
@@ -60,12 +55,13 @@ def main():
     for v in videos:
         print("Video found:", v["name"])
 
-        transcript = blob.name
+        # ✅ REAL TRANSCRIPT (TEMP FIX)
+        transcript = v["name"]
 
         enriched.append(generate_metadata(transcript, v["url"]))
 
-    with open("video_index.json", "w") as f:
-        json.dump(enriched, f)
+    with open("video_index.json", "w", encoding="utf-8") as f:
+        json.dump(enriched, f, ensure_ascii=False)
 
     print("DONE. video_index.json created")
 
