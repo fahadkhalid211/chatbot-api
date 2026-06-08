@@ -1,7 +1,11 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse
 import json
 import numpy as np
+from vertexai.language_models import TextEmbeddingModel
+import vertexai
 
 app = FastAPI()
 
@@ -13,51 +17,47 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Load index
+# CONFIG & INIT
+PROJECT_ID = "project-6ddfbc9f-8e2e-42c9-973"
+LOCATION = "us-central1"
+
+vertexai.init(project=PROJECT_ID, location=LOCATION)
+model = TextEmbeddingModel.from_pretrained("text-embedding-004")
+
 with open("video_index.json", "r", encoding="utf-8") as f:
     VIDEO_INDEX = json.load(f)
 
-# cosine similarity
 def cosine_similarity(a, b):
     a = np.array(a)
     b = np.array(b)
     return np.dot(a, b) / (np.linalg.norm(a) * np.linalg.norm(b))
 
+app.mount("/static", StaticFiles(directory="."), name="static")
+
+@app.get("/")
+async def home():
+    return FileResponse("index.html")
+
 @app.get("/search")
 def search(q: str):
+    if not q.strip():
+        return {"results": [], "error": "Empty query"}
 
-    q = q.lower()
+    query_embedding = model.get_embeddings([q])[0].values
 
-    # fake query embedding fallback (temporary simple hack)
-    # we convert text into simple numeric hash-like vector
-    query_vec = np.array([hash(word) % 1000 for word in q.split()])
-
-    best_video = None
-    best_score = -1
+    matches = []
 
     for item in VIDEO_INDEX:
-
-        video_vec = np.array(item.get("embedding", []))
-
-        if len(video_vec) == 0:
+        if "embedding" not in item or not item["embedding"]:
             continue
+        score = cosine_similarity(query_embedding, item["embedding"])
+        matches.append({
+            "video_url": item["url"],
+            "transcript": item.get("text", "")[:250] + "...",
+            "score": float(score)
+        })
 
-        # resize mismatch fix (safe cut)
-        min_len = min(len(query_vec), len(video_vec))
-        score = cosine_similarity(
-            query_vec[:min_len],
-            video_vec[:min_len]
-        )
+    # Sort by score and take top 3 (no strict threshold for now)
+    matches = sorted(matches, key=lambda x: x["score"], reverse=True)[:3]
 
-        if score > best_score:
-            best_score = score
-            best_video = item["url"]
-
-    if not best_video:
-        best_video = VIDEO_INDEX[0]["url"]
-        best_score = 0.1
-
-    return {
-        "video_url": best_video,
-        "score": float(best_score)
-    }
+    return {"results": matches}

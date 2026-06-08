@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ralph TikTok Semantic Search</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; text-align: center; background: #f4f4f4; }
+        h1 { color: #333; }
+        input { width: 60%; padding: 15px; font-size: 18px; border: 2px solid #ddd; border-radius: 8px; }
+        button { padding: 15px 30px; font-size: 18px; background: #ff0050; color: white; border: none; border-radius: 8px; cursor: pointer; }
+        button:hover { background: #e00045; }
+        #result { margin-top: 30px; max-width: 1000px; margin-left: auto; margin-right: auto; }
+        .video-card { margin: 20px auto; padding: 15px; background: white; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); max-width: 800px; }
+        video { width: 100%; max-width: 800px; border-radius: 10px; }
+        .score { color: #ff0050; font-weight: bold; }
+    </style>
+</head>
+<body>
+    <h1>🔍 Ralph TikTok Semantic Search</h1>
+    <input type="text" id="query" placeholder="Ask for a topic... (e.g. money, motivation, entrepreneur)">
+    <button onclick="searchVideo()">Search Videos</button>
+
+    <div id="result"></div>
+
+    <script>
+        async function searchVideo() {
+            const query = document.getElementById("query").value.trim();
+            if (!query) return alert("Please enter a search query");
+
+            document.getElementById("result").innerHTML = "<p>🔎 Searching semantically...</p>";
+
+            try {
+                const res = await fetch(`http://127.0.0.1:8000/search?q=${encodeURIComponent(query)}`);
+                const data = await res.json();
+
+                if (!data.results || data.results.length === 0) {
+                    document.getElementById("result").innerHTML = "<p>No good matches found.</p>";
+                    return;
+                }
+
+                let html = `<h2>Top Matches (${data.results.length})</h2>`;
+                
+                data.results.forEach(item => {
+                    html += `
+                        <div class="video-card">
+                            <div class="score">Score: ${item.score.toFixed(3)}</div>
+                            <video controls autoplay muted loop>
+                                <source src="${item.video_url}" type="video/mp4">
+                            </video>
+                            <p><strong>Transcript:</strong> ${item.transcript}</p>
+                        </div>
+                    `;
+                });
+
+                document.getElementById("result").innerHTML = html;
+            } catch (err) {
+                console.error(err);
+                document.getElementById("result").innerHTML = "<p style='color:red'>Error connecting to backend.<br>Make sure server is running on port 8000.</p>";
+            }
+        }
+
+        // Press Enter to search
+        document.getElementById("query").addEventListener("keypress", function(e) {
+            if (e.key === "Enter") searchVideo();
+        });
+    </script>
+</body>
+</html>
