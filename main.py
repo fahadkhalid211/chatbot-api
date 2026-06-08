@@ -17,46 +17,47 @@ app.add_middleware(
 with open("video_index.json", "r", encoding="utf-8") as f:
     VIDEO_INDEX = json.load(f)
 
+# cosine similarity
+def cosine_similarity(a, b):
+    a = np.array(a)
+    b = np.array(b)
+    return np.dot(a, b) / (np.linalg.norm(a) * np.linalg.norm(b))
 
 @app.get("/search")
 def search(q: str):
 
     q = q.lower()
 
-    best_video = None
+    # fake query embedding fallback (temporary simple hack)
+    # we convert text into simple numeric hash-like vector
+    query_vec = np.array([hash(word) % 1000 for word in q.split()])
 
-    # simple keyword fallback map
-    keywords = {
-        "motivation": ["motiv", "success", "life", "dream"],
-        "fitness": ["gym", "workout", "health"],
-        "money": ["money", "business", "rich", "earn"]
-    }
+    best_video = None
+    best_score = -1
 
     for item in VIDEO_INDEX:
 
-        text = item.get("text", "").lower()
+        video_vec = np.array(item.get("embedding", []))
 
-        score = 0
+        if len(video_vec) == 0:
+            continue
 
-        # keyword scoring
-        for k, words in keywords.items():
-            if k in q:
-                for w in words:
-                    if w in text:
-                        score += 1
+        # resize mismatch fix (safe cut)
+        min_len = min(len(query_vec), len(video_vec))
+        score = cosine_similarity(
+            query_vec[:min_len],
+            video_vec[:min_len]
+        )
 
-        if score > 0:
+        if score > best_score:
+            best_score = score
             best_video = item["url"]
-            break
 
     if not best_video:
-        # fallback: return ANY video so it never shows null
-        return {
-            "video_url": VIDEO_INDEX[0]["url"],
-            "score": 0.1
-        }
+        best_video = VIDEO_INDEX[0]["url"]
+        best_score = 0.1
 
     return {
         "video_url": best_video,
-        "score": 1.0
+        "score": float(best_score)
     }
